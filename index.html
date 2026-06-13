@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebGIS Prioritas Banjir Jabodetabek</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar feature-sidebar">
+        <div class="hero-panel">
+          <p class="eyebrow">WebGIS UAS SIG</p>
+          <h1>Prioritas Banjir Jabodetabek</h1>
+          <p class="hero-copy">
+            Peta prioritas banjir per kota/kabupaten berbasis data resmi BNPB 2024 dengan layer BPBD dan rumah sakit.
+          </p>
+          <div class="hero-badges">
+            <span>BNPB 2024</span>
+            <span>Tanpa Database</span>
+            <span>BNPB + OSM</span>
+          </div>
+        </div>
+
+        <section class="section-block">
+          <div class="section-heading">
+            <h2>Ringkasan</h2>
+            <p>Ringkasan wilayah aktif berdasarkan kejadian banjir resmi BNPB tahun 2024.</p>
+          </div>
+          <div class="stats-grid" id="stats-grid"></div>
+        </section>
+
+        <section class="section-block controls-block">
+          <div class="section-heading">
+            <h2>Kontrol Peta</h2>
+            <p>Filter kelas prioritas banjir turunan dan tampilkan fasilitas pendukung yang relevan.</p>
+          </div>
+
+          <label class="control-field">
+            <span>Kelas prioritas</span>
+            <select id="risk-filter">
+              <option value="all">Semua kategori</option>
+              <option value="tinggi">Prioritas tinggi</option>
+              <option value="sedang">Prioritas menengah</option>
+              <option value="rendah">Prioritas rendah</option>
+            </select>
+          </label>
+
+          <label class="control-field">
+            <span>Lompat ke wilayah</span>
+            <select id="region-select">
+              <option value="">Pilih wilayah</option>
+            </select>
+          </label>
+
+          <div class="toggle-grid">
+            <label class="toggle-card">
+              <input type="checkbox" id="toggle-bpbd" checked />
+              <span>BPBD</span>
+            </label>
+            <label class="toggle-card">
+              <input type="checkbox" id="toggle-rs" checked />
+              <span>Rumah sakit</span>
+            </label>
+          </div>
+
+          <button id="reset-view" class="ghost-button" type="button">Reset tampilan</button>
+        </section>
+
+        <section class="section-block priority-block">
+          <div class="section-heading">
+            <h2>Prioritas Wilayah</h2>
+            <p>Tiga wilayah dengan jumlah kejadian banjir BNPB tertinggi pada tampilan aktif.</p>
+          </div>
+          <div id="priority-list" class="priority-list"></div>
+        </section>
+
+        <section class="section-block guide-block">
+          <div class="section-heading">
+            <h2>Cara Baca SIG</h2>
+            <p>Empat poin cepat agar peta lebih mudah dipahami saat presentasi.</p>
+          </div>
+          <div class="guide-list">
+            <div class="guide-item">
+              <strong>Warna wilayah</strong>
+              <span>Merah menunjukkan prioritas tertinggi berdasarkan jumlah kejadian banjir 2024, hijau menunjukkan prioritas lebih rendah.</span>
+            </div>
+            <div class="guide-item">
+              <strong>Dasar klasifikasi</strong>
+              <span>Kelas dibentuk dari jumlah kejadian banjir resmi BNPB 2024: rendah 0-4, menengah 5-8, tinggi lebih dari 8 kejadian.</span>
+            </div>
+            <div class="guide-item">
+              <strong>Panel kanan</strong>
+              <span>Klik wilayah untuk melihat interpretasi SIG, pembanding antarwilayah, dan rekomendasi berbasis data tersedia.</span>
+            </div>
+            <div class="guide-item">
+              <strong>Fasilitas pendukung</strong>
+              <span>Marker BPBD dan rumah sakit membantu membaca dukungan kelembagaan dan layanan kesehatan di wilayah banjir.</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-block list-block">
+          <div class="section-heading">
+            <h2>Daftar Wilayah</h2>
+            <p>Urutan mengikuti jumlah kejadian banjir resmi BNPB 2024 dari tertinggi ke terendah.</p>
+          </div>
+          <div id="region-list" class="region-list"></div>
+        </section>
+
+        <section class="section-block methodology-block">
+          <div class="section-heading">
+            <h2>Catatan Dataset</h2>
+          </div>
+          <p>
+            Polygon wilayah memakai batas ADM2. Angka kejadian banjir dan total bencana berasal dari BNPB,
+            sedangkan fasilitas pendukung memakai titik OpenStreetMap/Nominatim yang dipilih sebagai referensi.
+          </p>
+          <p>
+            Warna merah-kuning-hijau menunjukkan <strong>kelas prioritas banjir turunan</strong> berdasarkan jumlah
+            kejadian banjir resmi BNPB 2024, bukan tinggi-rendah elevasi wilayah.
+          </p>
+        </section>
+      </aside>
+
+      <main class="map-pane">
+        <div class="map-header">
+          <div class="map-title-group">
+            <p class="map-kicker">Dashboard Spasial</p>
+            <h2>Visualisasi prioritas banjir dan fasilitas dukungan</h2>
+            <p class="map-subcopy">
+              Klik wilayah untuk membuka keterangan detail berbasis data BNPB dan fasilitas referensi di panel kanan.
+            </p>
+            <div class="map-meta">
+              <span>Data resmi BNPB 2024</span>
+              <span>13 wilayah Jabodetabek</span>
+              <span>Klasifikasi prioritas turunan</span>
+            </div>
+          </div>
+          <div class="map-actions">
+            <div class="map-legend-inline">
+              <span><i class="swatch swatch-high"></i>Prioritas tinggi</span>
+              <span><i class="swatch swatch-medium"></i>Prioritas menengah</span>
+              <span><i class="swatch swatch-low"></i>Prioritas rendah</span>
+            </div>
+            <button id="detail-toggle" class="drawer-toggle" type="button" aria-expanded="false" aria-controls="detail-drawer">
+              Keterangan Wilayah
+            </button>
+          </div>
+        </div>
+        <div class="map-frame">
+          <div id="map"></div>
+        </div>
+      </main>
+
+      <button id="detail-backdrop" class="drawer-backdrop" type="button" aria-label="Tutup panel detail"></button>
+
+      <aside id="detail-drawer" class="detail-drawer" aria-hidden="true">
+        <div class="drawer-header">
+          <div>
+            <p class="eyebrow">Wilayah Dipilih</p>
+            <h2>Keterangan Detail</h2>
+          </div>
+          <button id="detail-close" class="drawer-close" type="button" aria-label="Tutup panel detail">×</button>
+        </div>
+
+        <div class="drawer-content">
+          <section class="section-block detail-block detail-block-primary">
+            <div class="section-heading">
+              <h2>Detail Wilayah</h2>
+              <p>Klik polygon atau pilih wilayah untuk membaca kejadian banjir, tren, dan konteks bencana wilayah.</p>
+            </div>
+            <div id="detail-panel" class="detail-panel"></div>
+          </section>
+
+          <section class="section-block methodology-block detail-help-block">
+            <div class="section-heading">
+              <h2>Cara Membaca</h2>
+            </div>
+            <p>
+              Panel kanan ini fokus pada wilayah yang sedang dipilih. Informasi utama yang ditampilkan adalah jumlah
+              kejadian banjir BNPB 2024, proporsinya terhadap total bencana, tren 2022-2024, dan fasilitas pendukung.
+            </p>
+            <p>
+              Gunakan panel kiri untuk memfilter kelas prioritas dan memilih wilayah, lalu gunakan panel kanan untuk
+              membaca interpretasi SIG dan rekomendasi yang diturunkan dari indikator resmi yang tersedia.
+            </p>
+          </section>
+        </div>
+      </aside>
+    </div>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="data/jabodetabek-data.js"></script>
+    <script src="data/support-facilities.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
