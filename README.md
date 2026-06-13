@@ -2,6 +2,10 @@
 
 WebGIS statis untuk tugas Sistem Informasi Geografi (SIG) yang memvisualisasikan prioritas banjir per kota/kabupaten di Jabodetabek.
 
+## Demo Online
+
+`https://rapidtest25.github.io/Tugas-SIG/`
+
 ## Ringkasan
 
 Project ini menampilkan:
